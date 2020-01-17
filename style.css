@@ -57,7 +57,7 @@ canvas {
 
 @keyframes textshrink {
   from {
-    font-size: 70px;
+    font-size: 64px;
   }
   to {
     font-size: 32px;

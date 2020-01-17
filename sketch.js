@@ -7,76 +7,25 @@
 let video;
 let poseNet;
 let pose;
-let loaded = false;
 let target;
+let loaded = false;
+let started = false;
+let calibrated = false;
 
-class TargetPose {
-  // eventually use name and difficulty?
-  constructor() {
-    this.targetPoints = [
-      { part: "nose", position: { x: 320, y: 32 } },
-      { part: "leftShoulder", position: { x: 360, y: 94 } },
-      { part: "rightShoulder", position: { x: 280, y: 94 } },
-      { part: "leftElbow", position: { x: 400, y: 150 } },
-      { part: "rightElbow", position: { x: 240, y: 150 } },
-      { part: "leftWrist", position: { x: 420, y: 200 } },
-      { part: "rightWrist", position: { x: 220, y: 200 } },
-      { part: "leftKnee", position: { x: 360, y: 330 } },
-      { part: "rightKnee", position: { x: 280, y: 330 } },
-      { part: "leftAnkle", position: { x: 360, y: 420 } },
-      { part: "rightAnkle", position: { x: 280, y: 420 } },
-    ];
+const startButton = document.getElementById("start");
+const timeDiv = document.getElementById("time");
+const infoDiv = document.getElementById("info");
+
+const hideElement = (element) => {
+  if (!element.classList.contains("hide")) {
+    element.classList.toggle("hide");
   }
+};
 
-  draw = () => {
-    for (const point of this.targetPoints) {
-      const { x, y } = point.position;
-      strokeWeight(2);
-      fill(255, 0, 0, 100);
-      ellipse(x, y, 64);
-    }
-  };
-
-  score = (pose) => {
-    let total = 0;
-    for (const point of this.targetPoints) {
-      const { part, position } = point;
-      const { x: targetX, y: targetY } = position;
-      const { x: actualX, y: actualY } = pose[part];
-      const d = dist(targetX, targetY, actualX, actualY);
-      console.log(`Distance from target ${part}: ${d}`);
-      if (d <= 32) {
-        total += 10;
-      }
-    }
-    return total;
-  };
-}
-
-const countdown = () => {
-  const startButton = document.getElementById("start");
-  startButton.classList.toggle("hide");
-  const timeDiv = document.getElementById("time");
-  timeDiv.classList.toggle("hide");
-  timeDiv.classList.toggle("timeText");
-  const scoreDiv = document.getElementById("score");
-  scoreDiv.innerText = "";
-
-  let time = 3;
-  timeDiv.innerText = time;
-
-  const interval = setInterval(() => {
-    time -= 1;
-    timeDiv.innerText = time;
-    if (time <= 0) {
-      clearInterval(interval);
-      startButton.classList.toggle("hide");
-      timeDiv.classList.toggle("hide");
-      timeDiv.classList.toggle("timeText");
-      const score = target.score(pose);
-      scoreDiv.innerText = `Your score: ${score}`;
-    }
-  }, 1000);
+const showElement = (element) => {
+  if (element.classList.contains("hide")) {
+    element.classList.toggle("hide");
+  }
 };
 
 function setup() {
@@ -85,9 +34,9 @@ function setup() {
   video = createCapture(VIDEO);
   // video.size(960, 720);
   video.hide();
+
   poseNet = ml5.poseNet(video, modelLoaded);
-  poseNet.on("pose", getPoses);
-  target = new TargetPose();
+  poseNet.on("pose", getPose);
 }
 
 const modelLoaded = () => {
@@ -98,10 +47,9 @@ const modelLoaded = () => {
   startButton.classList.toggle("hide");
 };
 
-const getPoses = (poses) => {
+const getPose = (poses) => {
   if (poses.length > 0) {
     pose = poses[0].pose;
-    console.log(pose);
   }
 };
 
@@ -113,18 +61,84 @@ function draw() {
   // draw video capture feed as image inside p5 canvas
   image(video, 0, 0);
 
-  if (loaded) {
+  if (loaded && started) {
     target.draw();
   }
 
-  if (pose) {
-    // && pose.score > 0.5
-    // console.log(pose);
+  if (pose && !calibrated) {
     for (const point of pose.keypoints) {
-      const { x, y } = point.position;
-      // strokeWeight(0);
-      // fill(255, 0, 0);
-      // ellipse(x, y, 16);
+      if (partSet.has(point.part)) {
+        const { x, y } = point.position;
+        strokeWeight(0);
+        fill(255, 0, 0);
+        ellipse(x, y, 8);
+      }
     }
   }
 }
+
+const start = () => {
+  started = true;
+  target = new TargetPose("TPOSE", starterPose);
+
+  hideElement(startButton);
+  showElement(infoDiv);
+  infoDiv.innerText = "Match the pose to start!";
+  calibrate();
+};
+
+const calibrate = () => {
+  showElement(timeDiv);
+  let onTargetTime = 4;
+
+  const interval = setInterval(() => {
+    const score = target.score(pose);
+    if (score === 110) {
+      onTargetTime -= 1;
+      hideElement(infoDiv);
+      timeDiv.innerText = onTargetTime;
+    } else {
+      onTargetTime = 4;
+      showElement(infoDiv);
+      timeDiv.innerText = "";
+    }
+
+    if (onTargetTime <= 0) {
+      clearInterval(interval);
+      calibrated = true;
+      game();
+    }
+  }, 1000);
+};
+
+const game = () => {
+  let targets = shuffle(targetList);
+  let score = 0;
+  let currentIndex = 0;
+
+  const targetData = targets[currentIndex];
+  target = new TargetPose(targetData.name, targetData.points);
+
+  let timeLeft = 4;
+  timeDiv.innerText = "MATCH THIS!";
+  const interval = setInterval(() => {
+    timeLeft -= 1;
+    timeDiv.innerText = timeLeft;
+    if (timeLeft <= 0) {
+      score += target.score(pose);
+      currentIndex++;
+
+      if (currentIndex >= targets.length) {
+        clearInterval(interval);
+        hideElement(timeDiv);
+        showElement(infoDiv);
+        infoDiv.innerText = `Your score was ${score}!`;
+      } else {
+        const targetData = targets[currentIndex];
+        target = new TargetPose(targetData.name, targetData.points);
+        timeLeft = 4;
+        timeDiv.innerText = "MATCH THIS!";
+      }
+    }
+  }, 1000);
+};
