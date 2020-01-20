@@ -12,8 +12,12 @@
       <h1>Fitler Bit</h1>
       <div id="canvasContainer"><div id="loading">Loading...</div></div>
       <div class="info">
-        <div class=" hide bodyText" id="info"></div>
-        <button class="hide" id="start" onclick="start()">Start</button>
+        <div class="hide bodyText" id="info"></div>
+        <div id="start" class="hide">
+          <button class="startButton" onclick="start('EASY')">Easy</button>
+          <button class="startButton" onclick="start('MEDIUM')">Medium</button>
+          <button class="startButton" onclick="start('HARD')">Hard</button>
+        </div>
         <div class="hide timeText" id="time"></div>
       </div>
     </div>

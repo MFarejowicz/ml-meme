@@ -11,8 +11,10 @@ let target;
 let loaded = false;
 let started = false;
 let calibrated = false;
+let difficulty = "EASY";
 
-const startButton = document.getElementById("start");
+const loadingDiv = document.getElementById("loading");
+const startDiv = document.getElementById("start");
 const timeDiv = document.getElementById("time");
 const infoDiv = document.getElementById("info");
 
@@ -41,10 +43,8 @@ function setup() {
 
 const modelLoaded = () => {
   loaded = true;
-  const loadingDiv = document.getElementById("loading");
-  loadingDiv.classList.toggle("hide");
-  const startButton = document.getElementById("start");
-  startButton.classList.toggle("hide");
+  hideElement(loadingDiv);
+  showElement(startDiv);
 };
 
 const getPose = (poses) => {
@@ -55,10 +55,10 @@ const getPose = (poses) => {
 
 function draw() {
   // move image by the width of image to the right
-  translate(video.width, 0);
   // then scale it by -1 in the x-axis to flip the image
-  scale(-1, 1);
   // draw video capture feed as image inside p5 canvas
+  translate(video.width, 0);
+  scale(-1, 1);
   image(video, 0, 0);
 
   if (loaded && started) {
@@ -77,11 +77,12 @@ function draw() {
   }
 }
 
-const start = () => {
+const start = (diff) => {
+  difficulty = diff;
   started = true;
-  target = new TargetPose("TPOSE", starterPose);
+  target = new TargetPose("TPOSE", starterPose, difficulty);
 
-  hideElement(startButton);
+  hideElement(startDiv);
   showElement(infoDiv);
   infoDiv.innerText = "Match the pose to start!";
   calibrate();
@@ -111,16 +112,20 @@ const calibrate = () => {
   }, 1000);
 };
 
+const makeNewTarget = (targets, index) => {
+  const targetData = targets[index];
+  target = new TargetPose(targetData.name, targetData.points, difficulty);
+};
+
 const game = () => {
   let targets = shuffle(targetList);
   let score = 0;
   let currentIndex = 0;
 
-  const targetData = targets[currentIndex];
-  target = new TargetPose(targetData.name, targetData.points);
-
+  makeNewTarget(targets, currentIndex);
   let timeLeft = 4;
   timeDiv.innerText = "MATCH THIS!";
+
   const interval = setInterval(() => {
     timeLeft -= 1;
     timeDiv.innerText = timeLeft;
@@ -134,8 +139,7 @@ const game = () => {
         showElement(infoDiv);
         infoDiv.innerText = `Your score was ${score}!`;
       } else {
-        const targetData = targets[currentIndex];
-        target = new TargetPose(targetData.name, targetData.points);
+        makeNewTarget(targets, currentIndex);
         timeLeft = 4;
         timeDiv.innerText = "MATCH THIS!";
       }

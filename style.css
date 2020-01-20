@@ -4,6 +4,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  background-color: #e5b94d;
   font-family: "Alata", sans-serif;
 }
 
@@ -33,8 +34,10 @@ canvas {
   display: none;
 }
 
-#start {
+.startButton {
+  font-family: "Alata", sans-serif;
   font-size: 30px;
+  background-color: #e4e4e4;
 }
 
 .info {
