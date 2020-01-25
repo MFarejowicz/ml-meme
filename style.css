@@ -57,6 +57,19 @@ canvas {
   animation-iteration-count: infinite;
 }
 
+.snap {
+  margin: 20px 0;
+}
+
+.snapTitle {
+  display: flex;
+  justify-content: space-around;
+}
+
+#refresh {
+  margin-bottom: 10px;
+}
+
 @keyframes textshrink {
   from {
     font-size: 64px;

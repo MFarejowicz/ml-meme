@@ -10,6 +10,9 @@ class Snapshot {
   }
 
   show = () => {
+    const snapDiv = document.getElementById(`snap${this.index}`);
+    showElement(snapDiv);
+
     const s = (p) => {
       p.setup = () => {
         p.createCanvas(640, 480);
@@ -32,5 +35,9 @@ class Snapshot {
     };
 
     new p5(s, `snapCanvas${this.index}`);
+    const nameSpan = document.getElementById(`snapName${this.index}`);
+    nameSpan.innerText = this.target.name;
+    const scoreSpan = document.getElementById(`snapScore${this.index}`);
+    scoreSpan.innerText = this.score;
   };
 }

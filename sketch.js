@@ -153,6 +153,7 @@ const game = () => {
         showElement(infoDiv);
         infoDiv.innerText = `Your score was ${totalScore}!`;
         snaps.forEach((snap) => snap.show());
+        showElement(document.getElementById("refresh"));
       } else {
         makeNewTarget(targets, currentIndex);
         timeLeft = 4;
