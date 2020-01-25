@@ -190,6 +190,14 @@ const targetList = [
   },
 ];
 
+const shuffle = (arr) => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 class TargetPose {
   constructor(name, points, difficulty) {
     this.name = name;
@@ -210,12 +218,18 @@ class TargetPose {
     }
   }
 
-  draw = () => {
+  draw = (p) => {
     for (const point of this.points) {
       const { x, y } = point.position;
-      strokeWeight(2);
-      fill(57, 255, 20, 100);
-      ellipse(x, y, this.circleSize);
+      if (p) {
+        p.strokeWeight(2);
+        p.fill(57, 255, 20, 100);
+        p.ellipse(x, y, this.circleSize);
+      } else {
+        strokeWeight(2);
+        fill(57, 255, 20, 100);
+        ellipse(x, y, this.circleSize);
+      }
     }
   };
 
@@ -226,18 +240,10 @@ class TargetPose {
       const { x: targetX, y: targetY } = position;
       const { x: actualX, y: actualY } = pose[part];
       const d = dist(targetX, targetY, actualX, actualY);
-      if (d <= 32) {
+      if (d <= this.circleSize / 2) {
         total += 10;
       }
     }
     return total;
   };
 }
-
-const shuffle = (arr) => {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-};

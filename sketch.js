@@ -1,7 +1,9 @@
 /**
  * Todo when p5 updates:
  * change canvas size
- * change video.size()
+ * change video.size() with
+ * video.size(960, 720);
+ *
  */
 
 let video;
@@ -34,7 +36,6 @@ function setup() {
   let cnv = createCanvas(640, 480);
   cnv.parent("canvasContainer");
   video = createCapture(VIDEO);
-  // video.size(960, 720);
   video.hide();
 
   poseNet = ml5.poseNet(video, modelLoaded);
@@ -53,27 +54,38 @@ const getPose = (poses) => {
   }
 };
 
+const drawPosePoints = (pose, p) => {
+  for (const point of pose.keypoints) {
+    if (partSet.has(point.part)) {
+      const { x, y } = point.position;
+      if (p) {
+        p.strokeWeight(0);
+        p.fill(255, 0, 0);
+        p.ellipse(x, y, 8);
+      } else {
+        strokeWeight(0);
+        fill(255, 0, 0);
+        ellipse(x, y, 8);
+      }
+    }
+  }
+};
+
 function draw() {
   // move image by the width of image to the right
   // then scale it by -1 in the x-axis to flip the image
   // draw video capture feed as image inside p5 canvas
   translate(video.width, 0);
   scale(-1, 1);
-  image(video, 0, 0);
+  const frame = video.get();
+  image(frame, 0, 0);
 
   if (loaded && started) {
     target.draw();
   }
 
   if (pose && !calibrated) {
-    for (const point of pose.keypoints) {
-      if (partSet.has(point.part)) {
-        const { x, y } = point.position;
-        strokeWeight(0);
-        fill(255, 0, 0);
-        ellipse(x, y, 8);
-      }
-    }
+    drawPosePoints(pose);
   }
 }
 
@@ -119,7 +131,7 @@ const makeNewTarget = (targets, index) => {
 
 const game = () => {
   let targets = shuffle(targetList);
-  let score = 0;
+  let totalScore = 0;
   let currentIndex = 0;
 
   makeNewTarget(targets, currentIndex);
@@ -130,14 +142,17 @@ const game = () => {
     timeLeft -= 1;
     timeDiv.innerText = timeLeft;
     if (timeLeft <= 0) {
-      score += target.score(pose);
+      const targetScore = target.score(pose);
+      totalScore += targetScore;
+      snaps.push(new Snapshot(currentIndex, video.get(), target, pose, targetScore));
       currentIndex++;
 
       if (currentIndex >= targets.length) {
         clearInterval(interval);
         hideElement(timeDiv);
         showElement(infoDiv);
-        infoDiv.innerText = `Your score was ${score}!`;
+        infoDiv.innerText = `Your score was ${totalScore}!`;
+        snaps.forEach((snap) => snap.show());
       } else {
         makeNewTarget(targets, currentIndex);
         timeLeft = 4;
